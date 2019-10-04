@@ -1,0 +1,804 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Md Jahidul Hamid https://github.com/neurobin" />
+  <meta name="date" content="2017-03-13" />
+  <title>rnm(1) rnm user manual</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+</head>
+<body>
+<div id="header">
+<h1 class="title">rnm(1) rnm user manual</h1>
+<h2 class="author">Md Jahidul Hamid <a href="https://github.com/neurobin" class="uri">https://github.com/neurobin</a></h2>
+<h3 class="date">March 13, 2017</h3>
+</div>
+<h1 id="name">NAME</h1>
+<p>rnm - Bulk rename utility</p>
+<h1 id="synopsis">SYNOPSIS</h1>
+<p><strong>rnm</strong> [<em>options</em>] <em>file/paths</em></p>
+<h1 id="description">DESCRIPTION</h1>
+<p>Renames files/directories in bulk. Naming scheme (<em>Name String</em>) can be applied or regex replace can be performed to modify names dynamically. It uses PCRE2 (revised version of PCRE) regex to provide search (and replace) functionality.</p>
+<p>It provides versatile options to modify names, delete/replace part of it, indexing, case conversion, insert text, insert various file information like modification time, access time, permission etc.., insert parent directory names and many more.</p>
+<p>File search functionality is provided with PCRE2 regex. Fixed string search is also possible.</p>
+<p>Operations (rename, changing names, search) are selective of file type (directory, file, link).</p>
+<p>Files can be sorted by name, modification time, access time, size, file type (directory, file, link) etc..</p>
+<p>It provides an undo functionality to move back unwanted rename operations. Different <strong>rnm</strong> operations on different directory remember their own undo history.</p>
+<p>Simulations can be run instead of actual rename to view the potential outcome as program output on terminal with the <em>-sim</em> option.</p>
+<h1 id="usage">USAGE</h1>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> -ns name_string [other-opts] file/path
+<span class="kw">rnm</span> -rs <span class="st">&quot;/search/replace/mod&quot;</span> [other-opts] file/path
+<span class="kw">rnm</span> -ns/f namestring/file/path file/path</code></pre></div>
+<h1 id="options">OPTIONS</h1>
+<dl>
+<dt>-ns <em>name-string</em></dt>
+<dd>Name string. This is generally the new name for the file. Any part in this name string wrapped around with the path delimiter (/) is parsed as a name string rule and the new name is formed accordingly. See <a href="#name-string-rule">NAME STRING RULE</a> for details.
+</dd>
+<dt>-ns/f <em>file-path</em></dt>
+<dd>Name string file. File containing name strings per line. It makes a new name string rule available, namely <em>/nsf/</em>, which is generated by parsing the name string taken from the corresponding line in the file. Another additional rule <em>/l/</em> becomes available for line number. If <em>-ns</em> or <em>-rs</em> is not given, <em>/nsf/</em> becomes the new name. This option adds a restriction on the number of files to be renamed which is same as the number of non-empty lines in the name string file .
+</dd>
+<dt>-ns/fn <em>file-path</em></dt>
+<dd>Name String file. This takes a null terminated Name String file, i.e a file where filenames/name strings are terminated by null character (<em>\0</em>) instead of new line (<em>\n</em>).
+</dd>
+<dt>-sl <em>start-line</em></dt>
+<dd>Start Line number in name string file. If start line is 0, it is changed to the highest line number possible in the file. For example, if you want to go from last line to first line, you can pass start line as 0 and end line as 1. Empty lines are always ignored but line numbers are counted. Start line can be greater than end line, for example, start line 25 and end line 12 would mean: go from line 25 to 12. Default start line is 1.
+</dd>
+<dt>-l <em>start-line</em></dt>
+<dd>Same as <em>-sl</em>
+</dd>
+<dt>-el <em>end-line</em></dt>
+<dd>End line number in name string file to stop renaming from. If end line is 0, it is changed to the highest line number possible in the file. For example, if you want to go from first line to last line in the file, pass start line as 1 and end line as 0. Empty lines are always ignored but line numbers are counted. End line can be smaller than start line. Default end line is the highest line number in the file.
+</dd>
+<dt>-linc <em>line-increment</em></dt>
+<dd>The amount line count will be incremented in each iteration for name string file.
+</dd>
+<dt>-ss <em>search-regex</em></dt>
+<dd>Search string. String that will be used to search for files with matching names. This is generally a regex if not passed with <em>-ssf</em> option. See <a href="#search-string">SEARCH STRING</a> for details. This option can be given multiple times to add search strings.
+</dd>
+<dt>-ss/f <em>file-path</em></dt>
+<dd>Search string file. A file containing search string per line. This option can be given multiple times to add search strings.
+</dd>
+<dt>-ssf <em>fixed-search-term</em></dt>
+<dd>Fixed search string (not treated as regex). See <a href="#search-string">SEARCH STRING</a> for details. This option can be given multiple times to add search strings.
+</dd>
+<dt>-ssf/f <em>file-path</em></dt>
+<dd>Search string file. Contains fixed search string per line. This option can be given multiple times to add search strings.
+</dd>
+<dt>-rs <em>replace-string</em></dt>
+<dd><p>A string in the form:</p>
+<pre><code>/regex/replace/modifier</code></pre>
+<p>It performs regex replace on old filename to construct new name. It uses PCRE2 regex. After performing all the regex replace operations, the resultant string is stored in the name string rule <em>/rn/</em>. It can be used inside a name string or if name string is not given, this will by default become the new name for the current file. See <a href="#replace-string">REPLACE STRING</a> for details. This option can be given multiple times to add replace strings.</p>
+</dd>
+<dt>-rs/f <em>file-path</em></dt>
+<dd>Replace string file. A file containing replace string per line. This option can be given multiple times to add replace strings.
+</dd>
+<dt>-si <em>start-index</em></dt>
+<dd>Start index.
+</dd>
+<dt>-i <em>start-index</em>,</dt>
+<dd>Same as <em>-si</em>
+</dd>
+<dt>-ei <em>end-index</em></dt>
+<dd>End index. It works on directory index only. When rename is occurring inside a directory for a depth value greater than 0 or negative, directory index is limited to this end index. When incrementing directory index hits this limit, all remaining files/directories/links inside that directory are skipped. All directories and their subdirectories will be subject to this limiting value.
+</dd>
+<dt>-inc <em>increment</em></dt>
+<dd>Increment value (floating point decimal). The amount, index will be incremented or decremented in each iteration. Decremented index is available through name string rule <em>/-i/</em>, <em>/-id/</em> etc..
+</dd>
+<dt>-if <em>INDEX-FLAGS</em></dt>
+<dd><p>This sets Index flags. This is a '/' separated list of flags that will be used to render the index within it's text field. The general format is:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="st">&#39;/flag1/flag2/flag3=value/...&#39;</span></code></pre></div>
+<p>Valued flags are set with <em>flag=value</em> format. Ex:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="st">&#39;/uppercase/filler=*/&#39;</span></code></pre></div>
+See <a href="#index-flags">INDEX FLAGS</a> for details.
+</dd>
+<dt>-ifl <em>index-field-length</em></dt>
+<dd>Index field length. Non occupied field will be filled with index field fillers (set with <em>-iff</em>). <em>iff</em> is set to the character <em>0</em> by default.
+</dd>
+<dt>-iff <em>index-field-filler</em></dt>
+<dd>Non-occupied field in index will be filled with a character set by this option.
+</dd>
+<dt>-ifp <em>index-field-precision</em></dt>
+<dd>Index is a floating point decimal (by default) value. This sets the precision.
+</dd>
+<dt>-dp <em>depth</em></dt>
+<dd>Depth of folder. -1(any negative number) means unlimited depth i.e all files and subdirectories will be included. Other values may be 0 1 2 3 etc... Default depth is <em>0</em>, i.e directory contents will be ignored.
+</dd>
+<dt>-duh <em>seconds</em></dt>
+<dd>Delete undo history older than the given seconds.
+</dd>
+<dt>-duhd <em>days</em></dt>
+<dd>Delete undo history older than the given days.
+</dd>
+<dt>-fo</dt>
+<dd>File only mode. Only files are renamed (no directory or link). Goes to subdirectory/s if depth (<em>-dp</em>) is greater than 0 or negative.
+</dd>
+<dt>-do</dt>
+<dd>Apply rename on directory only. Goes to subdirectories if depth is greater than 0 or negative.
+</dd>
+<dt>-lo</dt>
+<dd>Link only mode. Goes to subdirectories if depth is greater than 0 or negative.
+</dd>
+<dt>-xd</dt>
+<dd>Exclude directory. Exclude any and all directories and their contents. The depth value <em>-dp</em> will have no effect if this option is given. This is by default equivalent to file+link only mode if not overridden by other options. (You can read this option as cross-d which probably makes more sense)
+</dd>
+<dt>-xf</dt>
+<dd>Exclude file. Depth value <em>-dp</em> is respected and goes to subdirectories if depth is greater than 0 or negative. This is by default equivalent to directory+link only mode if not overridden by other options. (You can read this option as cross-f which probably makes more sense)
+</dd>
+<dt>-xl</dt>
+<dd>Exclude link. Depth value <em>-dp</em> is respected and goes to subdirectories if depth is greater than 0 or negative. This is by default equivalent to directory+file only mode if not overridden by other options. (You can read this option as cross-l which probably makes more sense)
+</dd>
+<dt>-fl</dt>
+<dd>Set follow link flag. After passing this option, any file that is a link will be followed to their original target. If there are multiple links associated, only the end target (the original) will be renamed. This option must be passed before the file path that needs to be followed. Passing it after the file path will have no effect on the previous files.
+</dd>
+<dt>-nfl</dt>
+<dd>Unset follow link flag. After this option is passed, previously set <em>--follow-link</em> flag will be unset and symbolic links after this point will not be followed unless it gets overridden by another <em>-fl</em> option.
+</dd>
+<dt>-cd</dt>
+<dd>Count directory in reserved index, regardless of other options. Reserves indexes for directories even if it is file only or link only mode.
+</dd>
+<dt>-cf</dt>
+<dd>Count file in reserved index, regardless of other options. Reserves indexes for files even if it is directory only or link only mode.
+</dd>
+<dt>-cl</dt>
+<dd>Count link in reserved index, regardless of other options. Reserves indexes for links even if it is directory only or file only mode.
+</dd>
+<dt>-s</dt>
+<dd><p>Sort files in natural order (Human perceivable order). This option can be modified to use other sorting methods. For example: <em>-s/g</em> or <em>--sort/general</em> will sort the file in general (alphabetic) order. Available sorting methods:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">-s</span>    : default sort (natural sort)
+<span class="kw">-s/g</span>  : general sort
+<span class="kw">-s/n</span>  : natural sort
+<span class="kw">-s/mt</span> : sort according to file modification time (recent first)
+<span class="kw">-s/at</span> : sort according to file access time (recent first)
+<span class="kw">-s/ct</span> : sort according to file status change time (recent first)
+<span class="kw">-s/sz</span> : sort according to file size (larger first)
+<span class="kw">-s/d</span>  : prioritize directory when sorting
+<span class="kw">-s/f</span>  : prioritize file when sorting
+<span class="kw">-s/l</span>  : prioritize link when sorting
+<span class="kw">-s/r</span>  : reverse the order sorted by above methods
+<span class="kw">-s/no</span> : No sort</code></pre></div>
+</dd>
+<dt>-y</dt>
+<dd>Confirm Yes to all and suppress output for every file.
+</dd>
+<dt>-u</dt>
+<dd>Undo rename. Undo depends on working directory. If an <strong>rnm</strong> command is run from ~/somedir, to undo this operation one must run <strong>rnm</strong> from the same directory again or provide the path with <em>-up</em> option. Undo is a very aggressive operation, it bypasses all security check.
+</dd>
+<dt>-up</dt>
+<dd>Undo rename from a given path. After every successful rename (or undo), the undo path is set to the working directory where <strong>rnm</strong> is run from.
+</dd>
+<dt>-ups</dt>
+<dd>Show available undo paths.
+</dd>
+<dt>-q</dt>
+<dd>Quiet operation (speedy operation, includes <code>-y</code>).
+</dd>
+<dt>-qq</dt>
+<dd>Suppress even error messages.
+</dd>
+<dt>-f</dt>
+<dd>Force rename. Enables renaming some restricted files except <em>/</em>.
+</dd>
+<dt>-ff</dt>
+<dd>Double force. Bypass all restrictions.
+</dd>
+<dt>--</dt>
+<dd>If this option is passed, anything and everything after it will be taken as file path. Put all options before it.
+</dd>
+<dt>-h</dt>
+<dd>Show help menu.
+</dd>
+<dt>-v</dt>
+<dd>Show version info.
+</dd>
+<dt>-sim</dt>
+<dd>This runs a simulation of rename instead of actual rename operation.
+</dd>
+</dl>
+<h1 id="properties-of-options">PROPERTIES OF OPTIONS</h1>
+<p><strong>Options are not sequential</strong> (except <code>-h</code>, <code>-v</code>, <code>-fl</code>, <code>-nfl</code> <code>-u</code>, <code>-up</code>, <code>-ups</code>, <code>-duh</code>, <code>-duhd</code>).</p>
+<p>For example, the two commands below are the same:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> filepath -ns name
+<span class="kw">rnm</span> -ns name filepath</code></pre></div>
+<p><strong>Giving the same type of option multiple times is sequential.</strong> If an option is capable of overloading, it adds the given values sequentially, on the other hand, if the option can not be overloaded, it is overwritten. For example:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> -rs <span class="st">&#39;/_/-/g&#39;</span> -rs <span class="st">&#39;/-/./g&#39;</span> ./*</code></pre></div>
+<p>In above, the first replace string is applied first replacing all underscores to hyphen, then the second one replaces all hyphens to dot. The final result is: All underscores and hyphens is replaced with dot. The behavior is the same if they are glued together with semicolon as a delimiter (<code>-rs '/_/-/g;/-/./g'</code>)</p>
+<p><strong>Options -h, -v, -duh and -duhd are treated as First come, first served</strong> and possess the highest priority.</p>
+<p><strong>The behavior of -fl</strong> (<em>--follow-link</em>) and <strong>-nfl</strong> (<em>no-follow-link</em>) option depends on their position. For example:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /id/&#39;</span> link1 -fl link2 \
+    -nfl link3 link4 -fl  link5 link6</code></pre></div>
+<p>will rename the symbolic links as:</p>
+<ol style="list-style-type: decimal">
+<li><em>link1</em> will itself be renamed, it won't be followed</li>
+<li><em>link2</em> will be followed and its target will be renamed because <em>--follow-link</em> flag was <strong>set</strong> before it.</li>
+<li><em>link3</em> and <em>link4</em> won't be followed because <em>--follow-link</em> flag was <strong>unset</strong> by <em>-nfl</em> before these links.</li>
+<li><em>link5</em> and <em>link6</em> will be followed because <em>--follow-link</em> flag was <strong>set</strong> again before these links.</li>
+</ol>
+<p><strong>Priority of undo related options:</strong> <code>-ups</code> &gt; <code>-up</code> &gt; <code>-u</code>.</p>
+<p><strong>Options are case insensitive</strong>, i.e <em>-ssF</em> and <em>-ssf</em> are the same.</p>
+<h1 id="fully-specified-names-for-options">FULLY SPECIFIED NAMES FOR OPTIONS</h1>
+<p>All of the shorthand option names have equivalent full names. The use of either of them is the same, i.e all option or sub-option should be separated with space. The rule --someopt=value won't apply, instead <strong>rnm</strong> uses the syntax <strong>--someopts value</strong>. The following table shows the full names corresponding to the shorthand names:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Opt name</th>
+<th align="left">Full name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">-ns</td>
+<td align="left">--name-string</td>
+</tr>
+<tr class="even">
+<td align="left">-ns/f</td>
+<td align="left">--name-string-file</td>
+</tr>
+<tr class="odd">
+<td align="left">-ns/fn</td>
+<td align="left">--name-string-file-null-terminated</td>
+</tr>
+<tr class="even">
+<td align="left">-l</td>
+<td align="left">--line</td>
+</tr>
+<tr class="odd">
+<td align="left">-sl</td>
+<td align="left">--start-line</td>
+</tr>
+<tr class="even">
+<td align="left">-el</td>
+<td align="left">--end-line</td>
+</tr>
+<tr class="odd">
+<td align="left">-linc</td>
+<td align="left">--line-increment</td>
+</tr>
+<tr class="even">
+<td align="left">-ss</td>
+<td align="left">--search-string</td>
+</tr>
+<tr class="odd">
+<td align="left">-ss/f</td>
+<td align="left">--search-string-file</td>
+</tr>
+<tr class="even">
+<td align="left">-ssf</td>
+<td align="left">--search-string-fixed</td>
+</tr>
+<tr class="odd">
+<td align="left">-ssf/f</td>
+<td align="left">--search-string-fixed-file</td>
+</tr>
+<tr class="even">
+<td align="left">-rs</td>
+<td align="left">--replace-string</td>
+</tr>
+<tr class="odd">
+<td align="left">-rs/f</td>
+<td align="left">--replace-string-file</td>
+</tr>
+<tr class="even">
+<td align="left">-i</td>
+<td align="left">--index</td>
+</tr>
+<tr class="odd">
+<td align="left">-si</td>
+<td align="left">--start-index</td>
+</tr>
+<tr class="even">
+<td align="left">-ei</td>
+<td align="left">--end-index</td>
+</tr>
+<tr class="odd">
+<td align="left">-inc</td>
+<td align="left">--increment</td>
+</tr>
+<tr class="even">
+<td align="left">-if</td>
+<td align="left">--index-flags</td>
+</tr>
+<tr class="odd">
+<td align="left">-ifp</td>
+<td align="left">--index-field-precision</td>
+</tr>
+<tr class="even">
+<td align="left">-ifl</td>
+<td align="left">--index-field-length</td>
+</tr>
+<tr class="odd">
+<td align="left">-iff</td>
+<td align="left">--index-field-filler</td>
+</tr>
+<tr class="even">
+<td align="left">-dp</td>
+<td align="left">--depth</td>
+</tr>
+<tr class="odd">
+<td align="left">-duh</td>
+<td align="left">--delete-undo-history</td>
+</tr>
+<tr class="even">
+<td align="left">-duhd</td>
+<td align="left">--delete-undo-history-day</td>
+</tr>
+<tr class="odd">
+<td align="left">-fo</td>
+<td align="left">--file-only</td>
+</tr>
+<tr class="even">
+<td align="left">-do</td>
+<td align="left">--directory-only</td>
+</tr>
+<tr class="odd">
+<td align="left">-lo</td>
+<td align="left">--link-only</td>
+</tr>
+<tr class="even">
+<td align="left">-xd</td>
+<td align="left">--exclude-directory</td>
+</tr>
+<tr class="odd">
+<td align="left">-xf</td>
+<td align="left">--exclude-file</td>
+</tr>
+<tr class="even">
+<td align="left">-xl</td>
+<td align="left">--exclude-link</td>
+</tr>
+<tr class="odd">
+<td align="left">-fl</td>
+<td align="left">--follow-link</td>
+</tr>
+<tr class="even">
+<td align="left">-nfl</td>
+<td align="left">--no-follow-link</td>
+</tr>
+<tr class="odd">
+<td align="left">-cd</td>
+<td align="left">--count-directory</td>
+</tr>
+<tr class="even">
+<td align="left">-cf</td>
+<td align="left">--count-file</td>
+</tr>
+<tr class="odd">
+<td align="left">-cl</td>
+<td align="left">--count-link</td>
+</tr>
+<tr class="even">
+<td align="left">-s</td>
+<td align="left">--sort</td>
+</tr>
+<tr class="odd">
+<td align="left">-s/g</td>
+<td align="left">--sort/general</td>
+</tr>
+<tr class="even">
+<td align="left">-s/n</td>
+<td align="left">--sort/natural</td>
+</tr>
+<tr class="odd">
+<td align="left">-s/no</td>
+<td align="left">--sort/none</td>
+</tr>
+<tr class="even">
+<td align="left">-s/mt</td>
+<td align="left">--sort/mtime</td>
+</tr>
+<tr class="odd">
+<td align="left">-s/at</td>
+<td align="left">--sort/atime</td>
+</tr>
+<tr class="even">
+<td align="left">-s/ct</td>
+<td align="left">--sort/ctime</td>
+</tr>
+<tr class="odd">
+<td align="left">-s/d</td>
+<td align="left">--sort/directory</td>
+</tr>
+<tr class="even">
+<td align="left">-s/f</td>
+<td align="left">--sort/file</td>
+</tr>
+<tr class="odd">
+<td align="left">-s/l</td>
+<td align="left">--sort/link</td>
+</tr>
+<tr class="even">
+<td align="left">-s/sz</td>
+<td align="left">--sort/size</td>
+</tr>
+<tr class="odd">
+<td align="left">-s/r</td>
+<td align="left">--sort/reverse</td>
+</tr>
+<tr class="even">
+<td align="left">-y</td>
+<td align="left">--yes</td>
+</tr>
+<tr class="odd">
+<td align="left">-u</td>
+<td align="left">--undo</td>
+</tr>
+<tr class="even">
+<td align="left">-up</td>
+<td align="left">--undo-path</td>
+</tr>
+<tr class="odd">
+<td align="left">-ups</td>
+<td align="left">--undo-path-show</td>
+</tr>
+<tr class="even">
+<td align="left">-q</td>
+<td align="left">--quiet</td>
+</tr>
+<tr class="odd">
+<td align="left">-qq</td>
+<td align="left">--quiet-quiet</td>
+</tr>
+<tr class="even">
+<td align="left">-f</td>
+<td align="left">--force</td>
+</tr>
+<tr class="odd">
+<td align="left">-ff</td>
+<td align="left">--force-force</td>
+</tr>
+<tr class="even">
+<td align="left">-h</td>
+<td align="left">--help</td>
+</tr>
+<tr class="odd">
+<td align="left">-v</td>
+<td align="left">--version</td>
+</tr>
+<tr class="even">
+<td align="left">-sim</td>
+<td align="left">--simulation</td>
+</tr>
+</tbody>
+</table>
+<h1 id="terminology">TERMINOLOGY</h1>
+<p>These are the technical terms that will be thrown around a bit for convenience.</p>
+<h2 id="reserved-index">RESERVED INDEX</h2>
+<p>Index will be incremented even if any file is skipped renaming in order to reserve the index for that skipped file. These are constructed by appending the <code>r</code> character with the index identifier, e.g <em>/ir/</em>, <em>/-idr/</em> etc..</p>
+<h2 id="reverse-index">REVERSE INDEX</h2>
+<p>Decrementing index. These are constructed by inserting a <em>-</em> before the index identifier e.g <em>/-i/</em>, <em>/-id/</em> etc..</p>
+<h2 id="name-string">NAME STRING</h2>
+<p>A string, that is parsed to create names for new files. It can be fixed name which then can be modified for different files at runtime. Name sting is parsed by some rules (Name String Rule). (must be wrapped around with filepath delimiter <em>/</em>).</p>
+<h2 id="name-string-rule">NAME STRING RULE</h2>
+<p>A name string rule starts and ends with a <em>/</em> character, These special forms are parsed and expanded to their special meaning. For example <em>/i/</em> would expand to file index.</p>
+<h3 id="index-rules">INDEX RULES</h3>
+<ol style="list-style-type: decimal">
+<li><em>/i/</em> : Index.</li>
+<li><em>/ir/</em> : Reserved index.</li>
+<li><em>/id/</em> : Directory index (index inside a directory).</li>
+<li><em>/idr/</em> : Reserved directory index</li>
+<li><em>/-i/</em> : Inverse index.</li>
+<li><em>/-ir/</em> : Inverse reserved index.</li>
+</ol>
+<p>In general, <em>-i</em> in the above name string rules will mean inverse index conforming to their meaning.</p>
+<h3 id="counters">COUNTERS</h3>
+<ol style="list-style-type: decimal">
+<li><em>/dc/</em> : Directory count</li>
+<li><em>/l/</em> : Line number from <em>Name String File</em>.</li>
+</ol>
+<p>Base conversion, scientific conversion and Latin conversions are applicable on these counters. See <a href="#extended-index-rules">EXTENDED INDEX RULES</a>.</p>
+<h4 id="extended-index-rules">EXTENDED INDEX RULES</h4>
+<p><strong>Base conversion:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">/<span class="kw">&lt;rule&gt;</span>-b<span class="kw">&lt;</span>base<span class="kw">&gt;</span>/</code></pre></div>
+<p>For example, <em>/i-b8/</em> will convert the index to octal. &lt;base&gt; can be 2 to 36.</p>
+<p><strong>Scientific conversion:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">/<span class="kw">&lt;rule&gt;</span>-s/</code></pre></div>
+<p>For example, <em>/i-s/</em> will convert the index to scientific form (n.fE+-p)</p>
+<p><strong>Latin conversion:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">/<span class="kw">&lt;rule&gt;</span>-l/</code></pre></div>
+<p>For example, <em>/i-l/</em> will convert the index to Latin form.</p>
+<p><strong>Examples:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#indexing:</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /i/&#39;</span> ./*
+<span class="co">#indexing by directory:</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /id/&#39;</span> ./*
+<span class="co">#indexing with binary number</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /id-b2/&#39;</span> ./*
+<span class="co">#indexing with scientific number</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /id-s/&#39;</span> ./*
+<span class="co">#indexing with latin number</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /id-l/&#39;</span> ./*</code></pre></div>
+<h3 id="filename">FILENAME</h3>
+<ol style="list-style-type: decimal">
+<li><em>/fn/</em> : Full name of the file.</li>
+<li><em>/n/</em> : File name without extension.</li>
+<li><em>/e/</em> : File extension.</li>
+<li><em>/rn/</em> : Replaced Name, generated by replace strings.</li>
+<li><em>/pd/</em> : Parent directory name of the current file or directory.</li>
+<li><em>/wd/</em> : Current working directory name.</li>
+<li><em>/nsf/</em>: Name (or name string) from name string file.</li>
+</ol>
+<h4 id="extended-pd-rules">EXTENDED PD RULES</h4>
+<p>Its general format is</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash">/<span class="kw">pd&lt;</span>digits<span class="kw">&gt;</span>-<span class="kw">&lt;</span>digits<span class="kw">&gt;</span>-<span class="kw">&lt;</span>delimiter<span class="kw">&gt;</span>/
+         <span class="kw">or</span>
+/<span class="kw">pd&lt;</span>from<span class="kw">&gt;</span>-<span class="kw">&lt;</span>to<span class="kw">&gt;</span>-<span class="kw">&lt;</span>delimiter<span class="kw">&gt;</span>/</code></pre></div>
+<p>It specifies a bidirectional range of parent directories.</p>
+<ol style="list-style-type: decimal">
+<li><em>/pd0/</em> is the immediate parent directory name, <em>pd1</em> is the directory before <em>pd0</em> and so forth.</li>
+<li><em>/pd0-2-+/</em> will expand by concatenating pd0 to pd2 and with the <em>delimiter</em> in-between (e.g <em>dir0+dir1+dir2</em>).</li>
+<li><em>/pd2-0-+/</em> will do the same as above but in reverse order (<em>dir2+dir1+dir0</em>).</li>
+<li>In place of <em>&lt;digits&gt;</em> you can supply <em>e</em> which generally means the 'end' i.e the farthest level available from the immediate parent.</li>
+<li>In place of <em>&lt;digits&gt;</em> you can also supply <em>w</em> which means the level of working directory.</li>
+<li>Any unavailable level of directory will be ignored and be replaced with empty string.</li>
+</ol>
+<p><strong>Examples:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#Appending parent directory names</span>
+<span class="co">#with space in-between</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/pd0-e- /&#39;</span> ./*
+<span class="kw">rnm</span> -ns <span class="st">&#39;/pdw-0- /&#39;</span> ./*</code></pre></div>
+<h3 id="info-name-string-rule">INFO-NAME STRING RULE</h3>
+<p>This name string rule provides basic information about a file, directory or link. The general format of this rule is:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">/info-prop-op/</span></code></pre></div>
+<p>where <em>info-</em> is the identifier for this rule, <em>prop</em> is the property name and <em>op</em> is an optional entry which is used for additional formatting. Property names (<strong>prop</strong>) are case insensitive.</p>
+<p><strong>File time:</strong></p>
+<dl>
+<dt><em>mtime</em></dt>
+<dd>File modification time. <strong>op</strong>: Time format (default <em>%d-%m-%Y</em>)
+</dd>
+<dt><em>mtime,GMT</em></dt>
+<dd>File modification time in GMT. <strong>op</strong>: Time format (default <em>%d-%m-%Y</em>)
+</dd>
+<dt><em>atime</em></dt>
+<dd>File access time. <strong>op</strong>: Time format (default <em>%d-%m-%Y</em>)
+</dd>
+<dt><em>atime,GMT</em></dt>
+<dd>File access time in GMT. <strong>op</strong>: Time format (default <em>%d-%m-%Y</em>)
+</dd>
+<dt><em>ctime</em></dt>
+<dd>File status change time. <strong>op</strong>: Time format (default <em>%d-%m-%Y</em>)
+</dd>
+<dt><em>ctime,GMT</em></dt>
+<dd>File status change time in GMT. <strong>op</strong>: Time format (default <em>%d-%m-%Y</em>)
+</dd>
+</dl>
+<p><strong>Time Formats:</strong></p>
+<p>Time format string is used to specify an arbitrary date-time format. For example, <em>%d-%m%-Y</em> would produce something like <em>22-01-2017</em>. This format string is exactly the same as the format string taken by <code>strftime</code> (3). Some frequently used character sequences:</p>
+<ul>
+<li>%a, %A: week day name short and full respectively</li>
+<li>%b, %B: month name short and full</li>
+<li>%d: month day number</li>
+<li>%H: Hour in 24hr format</li>
+<li>%I: Hour in 12hr format</li>
+<li>%j: Day of the year (001-366)</li>
+<li>%m: month number</li>
+<li>%M: Minute</li>
+<li>%p: AM/PM</li>
+<li>%P: am/pm (lowercase)</li>
+<li>%S: second in a minute</li>
+<li>%t: tab character</li>
+<li>%u: week day number (1-7)</li>
+<li>%%: A literal % character.</li>
+</ul>
+<p>You can find a lot more of these character sequences described in details <a href="http://man7.org/linux/man-pages/man3/strftime.3.html#DESCRIPTION">here</a>.</p>
+<p><strong>Example:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ - /info-mtime-%d-%m-%Y %I:%M:%S %p/&#39;</span> ./*
+<span class="co">#The above appends modification time to the file names.</span></code></pre></div>
+<p><strong>File size:</strong></p>
+<dl>
+<dt><em>size</em></dt>
+<dd>Size of file. <strong>op</strong>: Unit (default: chosen according to size)
+</dd>
+<dt><em>blksize</em></dt>
+<dd>Size of system I/O block. <strong>op</strong>: Unit (default: chosen according to size)
+</dd>
+<dt><em>blocks</em></dt>
+<dd>Number of 512B blocks. <strong>op</strong>: N/A
+</dd>
+</dl>
+<p><strong>Other info:</strong></p>
+<dl>
+<dt><em>perm</em></dt>
+<dd>File permission. <strong>op</strong>: Either <em>ls</em> or <em>oct</em>.
+</dd>
+<dt><em>uid</em></dt>
+<dd>Owner ID. <strong>op</strong>: N/A
+</dd>
+<dt><em>gid</em></dt>
+<dd>Group ID. <strong>op</strong>: N/A
+</dd>
+<dt><em>dev</em></dt>
+<dd>Device ID. <strong>op</strong>: N/A
+</dd>
+<dt><em>inode</em></dt>
+<dd>Inode number. <strong>op</strong>: N/A
+</dd>
+<dt><em>mode</em></dt>
+<dd>File mode. <strong>op</strong>: N/A
+</dd>
+<dt><em>nlink</em></dt>
+<dd>Number of hard links. <strong>op</strong>: N/A
+</dd>
+</dl>
+<p><strong>Examples:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#Appending different file info to their names</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ size: /info-size/&#39;</span> ./*
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ size: /info-size-1024/&#39;</span> ./* <span class="co">#size in KB</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ octperm: /info-perm-oct/ lsperm: /info-perm-ls/&#39;</span> ./*
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ uid: /info-uid/&#39;</span> ./*</code></pre></div>
+<h2 id="name-string-file">NAME STRING FILE</h2>
+<p>A file which contains a list of name string (one per line). Empty lines will be ignored but line number will be counted.</p>
+<p>Each name string taken from this file is applied to each file, thus if there's 100 name strings in this file, their will be 100 rename only. All these name strings are parsed the same way as regular name strings given with <em>-ns</em> option with an additional rule <em>/l/</em> (line number).</p>
+<p>The generated/extracted name/namestring becomes available through the name string rule <em>/nsf/</em>. If an explicit <em>-ns</em> (or <em>-rs</em> and its equivalents) option is not given on the command line, '/nsf/' is taken as the name string by default i.e the new name will be the string expanded by <em>/nsf/</em>.</p>
+<p>A null terminated name string file is that one where name strings (i.e filenames) are terminated with null character instead of newline (<em>\n</em>). These are generally binary files and can be generated with other tools.</p>
+<h2 id="search-string">SEARCH STRING</h2>
+<p>A string that is used to search for files with matching filenames against the search string. By default it is a regex if <em>-ssf</em> option is not used. It is generally in the form</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">/regex/modifier</span></code></pre></div>
+<p>where <em>regex</em> is the regex to search for and available modifiers are <em>i</em> (case insensitive), <em>f</em> (file), <em>d</em> (directory), <em>l</em> (link), <em>!</em> (inverse search). If no modifier is used, the regex format can be reduced to <em>/regex/</em> or simply <em>regex</em>.</p>
+<p>Terminate search strings (<em>/regex/</em> format only) with <em>;</em> to provide multiple search strings, e.g <em>'/s1/i;/s2/;/s3/'</em>. This applies to fixed search strings as well.</p>
+<p>Also you can provide multiple search strings with repeated <em>-ss</em> and/or <em>-ssf</em> options and files with repeated <em>-ss/f</em> and/or <em>-ssf/f</em> options. These options can be mixed with each other too.</p>
+<p><strong>Examples:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#rename only mp3 and mp4 files</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /i/&#39;</span> -ss <span class="st">&#39;/.*\.mp(3|4)$/&#39;</span> ./*
+<span class="co">#rename everything excluding mp3 and mp4 files</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /i/&#39;</span> -ss <span class="st">&#39;/.*\.mp(3|4)$/!&#39;</span> ./*
+<span class="co">#rename file with .video in their names</span>
+<span class="co"># (fixed string search)</span>
+<span class="kw">rnm</span> -ns <span class="st">&#39;/fn/ /i/&#39;</span> -ssf <span class="st">&#39;.video&#39;</span> ./*</code></pre></div>
+<h2 id="index-field-length">INDEX FIELD LENGTH</h2>
+<p>An integer value defining the field length of index. By default empty field will be filled with 0's. For example, if the value is <em>3</em>, then indexes will be <em>001</em>, <em>002</em>, <em>003</em>, etc.. Different filler (other than 0) can be provided with <em>-iff</em> option.</p>
+<h2 id="replaced-name">REPLACED NAME</h2>
+<p>The name can be modified at runtime using replace string. Replace string will be parsed to create a new <em>Name String</em> rule: <em>/rn/</em> which can be used in <em>Name String</em>. If name string is not passed as argument, the new name of the file will be <em>/rn/</em>. <em>Replaced Name</em> is always generated from the old filename (even when name string file is given).</p>
+<h2 id="replace-string">REPLACE STRING</h2>
+<p><em>Replace String</em> is of the form:</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">/regex/replace/modifier</span></code></pre></div>
+<p>where <em>regex</em> is the regex to search for and <em>replace</em> is the string to replace with. <em>Name String</em> rules are available in <em>regex</em> and <em>replace</em> part in Replace String.</p>
+<p>Special character sequences for <em>replace</em> part:</p>
+<ol style="list-style-type: decimal">
+<li><em>&amp;</em> will be taken as the entire match found by the <em>regex</em>.</li>
+<li><em>\1</em>, <em>\2</em> etc.. are the captured groups. If you want to isolate a captured group, wrap it around with <em>{}</em>. For example, if you want to put a digit (2) after captured group <em>\1</em>, you can't use it like <em>\12</em>. <em>\12</em> will mean <em>12th</em> captured group not <em>\1</em> appended with a digit (1). In this case isolate the captured group with <em>{}</em> i.e <em>\{1}2</em>.</li>
+<li>Named captured group can be accessed as <em>\{name}</em>.</li>
+<li><em>\c</em> will convert the matched string to lowercase, and <em>\C</em> will convert it to uppercase. No other character is allowed in replace part if this is used. You can still concatenate different replace strings with <em>;</em> (semicolon).</li>
+<li>to insert a <em>&amp;</em> literally, use <em>\&amp;</em> and for <em>\</em> use <em>\\</em>.</li>
+<li>Modifiers are <em>i</em> (case insensitive), <em>g</em> (global), <em>f</em> (file), <em>d</em> (directory), <em>l</em> (link).</li>
+</ol>
+<p><em>Replace String</em> is always performed on old file name (even when name string file is given).</p>
+<p>You can provide multiple replace strings with repeated <em>-rs</em> option and multiple file with repeated <em>-rs/f</em> options. These options can be mixed with each other too.</p>
+<p>Multiple replace strings can also be given by terminating each individual replace strings with <em>;</em> (semicolon):</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> -rs <span class="st">&#39;/.*_/\C/gi;/-/ /g;/#/@/g&#39;</span> ./*</code></pre></div>
+<p><strong>Examples:</strong></p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co">#convert to uppercase</span>
+<span class="kw">rnm</span> -rs <span class="st">&#39;/.*/\C/&#39;</span> ./*
+<span class="co">#convert to lowercase</span>
+<span class="kw">rnm</span> -rs <span class="st">&#39;/.*/\c/&#39;</span> ./*
+<span class="co">#replace all @ with - in the names</span>
+<span class="kw">rnm</span> -rs <span class="st">&#39;/@/-/g&#39;</span>
+<span class="co">#Treat files and directories differently</span>
+<span class="kw">rnm</span> -rs <span class="st">&#39;/@/-/gf;/#/@/gd;&#39;</span>
+<span class="co">#the above will replace all @ in file (not directory)</span>
+<span class="co">#names to - and all # in directory names to @</span></code></pre></div>
+<h2 id="index-flags">INDEX FLAGS</h2>
+<ul>
+<li><em>uppercase</em> : means uppercase.</li>
+<li><em>showpoint</em> : show point regardless if it's an integer or floating point value.</li>
+<li><em>showbase</em> : means show base (Hex or Oct).</li>
+<li><em>showpos</em> : show + sign for positive numbers.</li>
+<li><em>right</em> : adjust right.</li>
+<li><em>left</em> : adjust left.</li>
+<li><em>internal</em> : adjust internal.</li>
+<li><em>precision</em> : set precision. Used as <code>precision=value</code></li>
+<li><em>length</em> : sets length. Used as <code>length=value</code></li>
+<li><em>filler</em> : sets filler. Used as <code>filler=value</code></li>
+</ul>
+<h2 id="modifiers">MODIFIERS</h2>
+<ol style="list-style-type: decimal">
+<li><em>i</em>: case insensitive match or replace.</li>
+<li><em>g</em>: global replace</li>
+<li><em>f</em>: True if it's a file, otherwise false.</li>
+<li><em>d</em>: True if it's a directory, otherwise false.</li>
+<li><em>l</em>: True if it's a link, otherwise false.</li>
+<li><em>!</em>: inverse search.</li>
+</ol>
+<p>The <em>f</em>, <em>d</em> and <em>l</em> modifiers are ORed when combined.</p>
+<h3 id="examples">EXAMPLES:</h3>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">rnm</span> file -ns new_file
+<span class="kw">rnm</span> file -rs <span class="st">&quot;/f/F/&quot;</span>
+<span class="co">#-do forces Directory only mode</span>
+<span class="kw">rnm</span> folder -ns <span class="st">&quot;New Folder&quot;</span> -do
+<span class="kw">rnm</span> ./New*/* -ns /i/.ext
+<span class="co">#This will go inside the New Folder directory</span>
+<span class="kw">rnm</span> <span class="st">&quot;./New Folder&quot;</span> -ns /id//dc/.ext -dp 1 -fo
+<span class="co"># -dp -1 (infinite depth)</span>
+<span class="kw">rnm</span> <span class="st">&quot;./New Folder&quot;</span> -ns /id//dc/.ext -dp -1 -fo
+<span class="kw">rnm</span> ./New* -ns /id/.ext -ss <span class="st">&quot;regex&quot;</span>
+<span class="kw">rnm</span> -ns/f filepath -ns /n//id/.ext
+<span class="kw">rnm</span> -ns/f filepath</code></pre></div>
+<p><strong>Only invalid characters for a file or directory name is the path delimiter (/) and the null character (<em>\0</em>).</strong></p>
+<h1 id="things-to-care">THINGS TO CARE</h1>
+<ol style="list-style-type: decimal">
+<li>All options should always be separated by space. For Example: <em>-vy</em> won't mean two option <em>-v</em> and <em>-y</em>, rather it will mean a single option <em>-vy</em>.</li>
+<li>Any dangling argument with <em>-</em> at beginning will be treated as an option and produce error if invalid.</li>
+<li>If filename/path argument may include <em>-</em> at the beginning, use <em>--</em> to make all the arguments after this option as paths/names (not options).</li>
+<li>If you run <code>rnm . -ns something</code> or <code>rnm ./ -ns something</code>, your current directory will be renamed (be careful).</li>
+<li>This is a dangerous tool like <code>rm</code>, so use with care. If you make a mistake and do some unwanted rename, run <code>rnm -u</code> to undo (before running any more <strong>rnm</strong> command).</li>
+<li>Pass all regex like strings within quotes even if they don't contain any white space.</li>
+<li>To pass a filename that resembles an option, use <code>./</code>, i.e <code>./-ns</code> to pass a file named <code>-ns</code> in the current directory. Or you can use the <code>--</code> option to make it a non-option argument; in that case make sure to pass all &quot;Option&quot; arguments before <code>--</code>, because everything after <code>--</code> will be taken as file path/s.</li>
+<li>A common mistake is to pass files like this: <code>rnm -ns 'something' *</code>, it will work as long as no file names contain <em>-</em> at the beginning, a safer approach is <code>rnm -ns 'something' ./*</code></li>
+</ol>
+<h1 id="limits">LIMITS</h1>
+<p><strong>Maximum length of file name :</strong> FILENAME_MAX</p>
+<p><strong>Default latin fallback :</strong> 55555. After this value Latin conversion will fall back to decimal. You can override this with <em>-if</em> option by setting <em>/latin-fallback=6666/</em> (or some other value). Big Latin number may produce much larger name which in turn may give you error due to limit on length of file names.</p>
+<h1 id="log-dir">LOG DIR</h1>
+<p>~/.local/share/neurobin/rnm</p>
+<h1 id="exit-status">EXIT STATUS</h1>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Status</th>
+<th align="left">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="left">Success</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="left">Failure</td>
+</tr>
+<tr class="odd">
+<td align="left">2</td>
+<td align="left">Interrupt</td>
+</tr>
+<tr class="even">
+<td align="left">3</td>
+<td align="left">Unsafe termination</td>
+</tr>
+<tr class="odd">
+<td align="left">4</td>
+<td align="left">Unknown termination</td>
+</tr>
+</tbody>
+</table>
+<h1 id="bug-report">BUG REPORT</h1>
+<p><a href="https://github.com/neurobin/rnm/issues" class="uri">https://github.com/neurobin/rnm/issues</a></p>
+</body>
+</html>
